@@ -60,6 +60,10 @@ p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
 .msg span { animation: drip 1s infinite; display: inline-block; }
 @keyframes drip { 0% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 #particles-js { position:absolute; inset:0; z-index:1; }
+#addMessageContainer { margin-top: 20px; z-index: 2; }
+#addMessageContainer input { padding: 8px; width: 200px; border: none; border-radius: 4px; }
+#addMessageContainer button { padding: 8px 12px; margin-left: 10px; background: #ff4d6d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+#addMessageContainer button:hover { background: #e6395e; }
 </style>
 </head>
 <body>
@@ -70,8 +74,12 @@ p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
 <div class="msg" id="msg">Tap the heart ❤️</div>
 <audio id="heartSound" src="https://example.com/heartbeat.mp3"></audio>
 <audio id="filthSound" src="https://example.com/fast-heartbeat.mp3"></audio>
+<div id="addMessageContainer">
+  <input type="text" id="newMsgInput" placeholder="Add a new message...">
+  <button onclick="addMessage()">Add</button>
+</div>
 <script>
-const romanticMessages = [
+let romanticMessages = [
   "Still choosing you. ❤️",
   "Distance didn’t stop this. 🌍",
   "We’re building, slowly. 🛠️",
@@ -79,7 +87,7 @@ const romanticMessages = [
   "This heart knows the wait. 💕"
 ];
 
-const filthMessages = [
+let filthMessages = [
   "Craving your wet touch <span>💦</span>.",
   "Imagining you dripping for me <span>💦</span>.",
   "Can't wait to make you moan 🔥.",
@@ -92,6 +100,12 @@ let isFilth = false;
 let pressTimer;
 let isLongPress = false;
 
+const owner = 'justnotintrested';
+const repo = 'Kituu';
+const token = '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'; 
+const romanticPath = 'romantic.txt';
+const filthPath = 'filth.txt';
+
 const heart = document.querySelector('.heart');
 const pElement = document.querySelector('p');
 const msgElement = document.getElementById('msg');
@@ -99,8 +113,8 @@ const heartSound = document.getElementById('heartSound');
 const filthSound = document.getElementById('filthSound');
 
 // Base64 SVGs for particles
-const heartImage = 'data:image/svg+xml;base64,Cjxzdmcgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiB2aWV3Qm94PSIwIDAgMzIgMzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHBhdGggZD0iTTIzLjYgMmMtMy40IDAtNi40IDIuMS03LjYgNS4xQzE0LjggNC4xIDExLjggMiA4LjQgMiAzLjggMiAwIDUuOCAwIDEwLjRjMCA1LjQgNC41IDkuOCAxMS4zIDE2LjJsNC43IDQuNCA0LjctNC40QzI3LjUgMjAuMiAzMiAxNS44IDMyIDEwLjQgMzIgNS44IDI4LjIgMiAyMy42IDJ6IiBmaWxsPSIjZmY0ZDZkIi8+Cjwvc3ZnPgo=';
-const dropImage = 'data:image/svg+xml;base64,Cjxzdmcgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiB2aWV3Qm94PSIwIDAgMzIgMzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPHBhdGggZD0iTTE2IDJDMTEuNiAyIDggNS42IDggMTBjMCAzLjMgMi43IDYgNiA2aDRjMy4zIDAgNi0yLjcgNi02IDAtNC40LTMuNi04LTgtOHptMCAyOGMtNC40IDAtOC0zLjYtOC04IDAtMS44LjYtMy40IDEuNi00LjdMMTYgMjRsNi40LTYuN0MyMy40IDE2LjYgMjQgMTUgMjQgMTMuMmMwLTQuNC0zLjYtOC04LThzLTggMy42LTggOGMwIDEuOC42IDMuNCAxLjYgNC43TDE2IDI0bDYuNC02LjdDMjMuNCAxOC42IDI0IDIwLjIgMjQgMjJjMCA0LjQtMy42IDgtOCA4eiIgZmlsbD0iI2NjMDAwMCIvPgo8L3N2Zz4K';
+const heartImage = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMjMuNiAyYy0zLjQgMC02LjQgMi4xLTcuNiA1LjFDMTQuOCA0LjEgMTEuOCAyIDguNCAyIDMuOCAyIDAgNS44IDAgMTAuNGMwIDUuNCA0LjUgOS44IDExLjMgMTYuMmw0LjcgNC40IDQuNy00LjRDMjcuNSAyMC4yIDMyIDE1LjggMzIgMTAuNCAzMiA1LjggMjguMiAyIDIzLjYgMnoiIGZpbGw9IiNmZjRkNmQiLz4KPC9zdmc+';
+const dropImage = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cGF0aCBkPSJNMTYgMkMxMS42IDIgOCA1LjYgOCAxMGMwIDMuMyAyLjcgNiA2IDZoNGMzLjMgMCA2LTIuNyA2LTYgMC00LjQtMy42LTggOC04em0wIDI4Yy00LjQgMC04LTMuNi04LThjMC0xLjguNi0zLjQgMS42LTQuN0wxNiAyNGw2LjQtNi43QzIzLjQgMTYuNiAyNCAxNSAyNCAxMy4yYzAtNC40LTMuNi04LTgtOHMtOCAzLjYtOCA4YzAgMS44LjYgMy40IDEuNiA0LjdMMTYgMjRsNi40LTYuN0MyMy40IDE4LjYgMjQgMjAuMiAyNCAyMmMwIDQuNC0zLjYgOC04IDh6IiBmaWxsPSIjY2MwMDAwIi8+Cjwvc3ZnPg==';
 
 // Shareable link param
 const urlParams = new URLSearchParams(window.location.search);
@@ -164,6 +178,79 @@ function initParticles() {
   });
 }
 
+// Load messages from GitHub on start
+function loadMessages(isFilthMode) {
+  const path = isFilthMode ? filthPath : romanticPath;
+  fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`)
+    .then(res => {
+      if (res.ok) return res.text();
+      throw new Error('Not found');
+    })
+    .then(text => {
+      const msgs = text.split('\n').filter(m => m.trim());
+      if (isFilthMode) filthMessages = msgs;
+      else romanticMessages = msgs;
+    })
+    .catch(() => console.log(`No ${path} file, using defaults`));
+}
+loadMessages(false);
+loadMessages(true);
+
+// Add new message
+function addMessage() {
+  const newMsg = document.getElementById('newMsgInput').value.trim();
+  if (newMsg) {
+    const msgs = isFilth ? filthMessages : romanticMessages;
+    msgs.push(newMsg);
+    document.getElementById('newMsgInput').value = '';
+    updateGitHubFile();
+  }
+}
+
+async function getFileSHA(path) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.sha;
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function updateGitHubFile() {
+  const path = isFilth ? filthPath : romanticPath;
+  const msgs = isFilth ? filthMessages : romanticMessages;
+  const content = btoa(msgs.join('\n') + '\n'); // Add trailing newline
+  const sha = await getFileSHA(path);
+
+  const body = {
+    message: 'Add new message',
+    content: content
+  };
+  if (sha) body.sha = sha;
+
+  fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  }).then(res => {
+    if (res.ok) console.log('File updated/created on GitHub');
+    else console.error('Error updating file');
+  }).catch(err => console.error(err));
+}
+
 // Mouse events
 heart.addEventListener('mousedown', () => {
   isLongPress = false;
@@ -200,15 +287,6 @@ heart.addEventListener('touchend', () => {
   }
 });
 
-// Customizable messages on double-click
-heart.addEventListener('dblclick', () => {
-  const newMsg = prompt('Add a new message:');
-  if (newMsg) {
-    const msgs = isFilth ? filthMessages : romanticMessages;
-    msgs.push(newMsg);
-  }
-});
-
 // Countdown Timer
 const targetDate = new Date('2027-01-01T00:00:00');
 const countdownElement = document.createElement('div');
@@ -217,7 +295,7 @@ countdownElement.style.marginTop = '20px';
 countdownElement.style.fontSize = '16px';
 countdownElement.style.opacity = '0.85';
 countdownElement.style.zIndex = '2';
-document.body.appendChild(countdownElement);
+document.body.insertBefore(countdownElement, document.getElementById('addMessageContainer'));
 
 function updateCountdown() {
   const now = new Date();
