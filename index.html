@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Us</title>
+<style>
+body{
+  margin:0; height:100vh;
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  background:#0e0e11; color:#fff;
+  font-family:system-ui;
+}
+.heart{
+  width:120px; height:120px;
+  background:#ff4d6d;
+  position:relative;
+  transform:rotate(-45deg);
+  animation:beat 2s infinite;
+  cursor:pointer;
+}
+.heart::before,.heart::after{
+  content:"";
+  width:120px;height:120px;
+  background:#ff4d6d;
+  border-radius:50%;
+  position:absolute;
+}
+.heart::before{ top:-60px; left:0;}
+.heart::after{ left:60px; top:0;}
+@keyframes beat{
+  0%,100%{ transform:scale(1) rotate(-45deg);}
+  50%{ transform:scale(1.15) rotate(-45deg);}
+}
+p{ margin-top:30px; opacity:.8; text-align:center;}
+.msg{ margin-top:15px; font-size:14px; opacity:.9;}
+</style>
+</head>
+<body>
+
+<div class="heart" onclick="nextMsg()"></div>
+
+<p>This beats because of us.<br>Waiting for 2027.</p>
+<div class="msg" id="msg">Tap the heart ❤️</div>
+
+<script>
+const messages = [
+  "Still choosing you.",
+  "Distance didn’t stop this.",
+  "We’re building, slowly.",
+  "One day closer, always.",
+  "This heart knows the wait."
+];
+let i = 0;
+function nextMsg(){
+  document.getElementById("msg").innerText = messages[i % messages.length];
+  i++;
+}
+</script>
+
+</body>
+</html>
