@@ -5,11 +5,23 @@
 <title>Us</title>
 <style>
 body{
-  margin:0; height:100vh;
+  margin:0; height:100vh; overflow:hidden;
   display:flex; flex-direction:column;
   justify-content:center; align-items:center;
-  background:#0e0e11; color:#fff;
-  font-family:system-ui;
+  background:radial-gradient(circle at top, #1b1b2f, #0e0e11);
+  color:#fff; font-family:system-ui;
+}
+.bg{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(#ffffff22 1px, transparent 1px);
+  background-size:60px 60px;
+  animation:float 40s linear infinite;
+  opacity:.25;
+}
+@keyframes float{
+  from{background-position:0 0;}
+  to{background-position:1000px 1000px;}
 }
 .heart{
   width:120px; height:120px;
@@ -18,6 +30,8 @@ body{
   transform:rotate(-45deg);
   animation:beat 2s infinite;
   cursor:pointer;
+  box-shadow:0 0 40px #ff4d6d88;
+  z-index:2;
 }
 .heart::before,.heart::after{
   content:"";
@@ -32,11 +46,13 @@ body{
   0%,100%{ transform:scale(1) rotate(-45deg);}
   50%{ transform:scale(1.15) rotate(-45deg);}
 }
-p{ margin-top:30px; opacity:.8; text-align:center;}
-.msg{ margin-top:15px; font-size:14px; opacity:.9;}
+p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
+.msg{ margin-top:15px; font-size:14px; opacity:.9; z-index:2;}
 </style>
 </head>
 <body>
+
+<div class="bg"></div>
 
 <div class="heart" onclick="nextMsg()"></div>
 
@@ -44,17 +60,16 @@ p{ margin-top:30px; opacity:.8; text-align:center;}
 <div class="msg" id="msg">Tap the heart ❤️</div>
 
 <script>
-const messages = [
+const messages=[
   "Still choosing you.",
   "Distance didn’t stop this.",
   "We’re building, slowly.",
   "One day closer, always.",
   "This heart knows the wait."
 ];
-let i = 0;
+let i=0;
 function nextMsg(){
-  document.getElementById("msg").innerText = messages[i % messages.length];
-  i++;
+  document.getElementById("msg").innerText = messages[i++ % messages.length];
 }
 </script>
 
