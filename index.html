@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Us</title>
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 <style>
 body{
   margin:0; height:100vh; overflow:hidden;
@@ -56,28 +57,34 @@ body{
 }
 p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
 .msg{ margin-top:15px; font-size:14px; opacity:.9; z-index:2;}
+.msg span { animation: drip 1s infinite; display: inline-block; }
+@keyframes drip { 0% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+#particles-js { position:absolute; inset:0; z-index:1; }
 </style>
 </head>
 <body>
+<div id="particles-js"></div>
 <div class="bg"></div>
 <div class="heart"></div>
 <p>This beats because of us.<br>Waiting for 2027.</p>
 <div class="msg" id="msg">Tap the heart ❤️</div>
+<audio id="heartSound" src="https://example.com/heartbeat.mp3"></audio>
+<audio id="filthSound" src="https://example.com/fast-heartbeat.mp3"></audio>
 <script>
 const romanticMessages = [
-  "Still choosing you.",
-  "Distance didn’t stop this.",
-  "We’re building, slowly.",
-  "One day closer, always.",
-  "This heart knows the wait."
+  "Still choosing you. ❤️",
+  "Distance didn’t stop this. 🌍",
+  "We’re building, slowly. 🛠️",
+  "One day closer, always. ⏳",
+  "This heart knows the wait. 💕"
 ];
 
 const filthMessages = [
-  "Craving your wet touch.",
-  "Imagining you dripping for me.",
-  "Can't wait to make you moan.",
-  "This throbs, hard and ready.",
-  "Let's get filthy and soaked."
+  "Craving your wet touch <span>💦</span>.",
+  "Imagining you dripping for me <span>💦</span>.",
+  "Can't wait to make you moan 🔥.",
+  "This throbs, hard and ready <span>🍆</span>.",
+  "Let's get filthy and soaked <span>💦</span>."
 ];
 
 let i = 0;
@@ -88,15 +95,32 @@ let isLongPress = false;
 const heart = document.querySelector('.heart');
 const pElement = document.querySelector('p');
 const msgElement = document.getElementById('msg');
+const heartSound = document.getElementById('heartSound');
+const filthSound = document.getElementById('filthSound');
+
+// Shareable link param
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('mode') === 'filth') {
+  isFilth = true;
+  updateVisuals();
+  i = 0;
+  nextMsg();
+}
 
 function nextMsg() {
   const msgs = isFilth ? filthMessages : romanticMessages;
-  msgElement.innerText = msgs[i++ % msgs.length];
+  msgElement.innerHTML = msgs[i++ % msgs.length]; // Use innerHTML for spans
+  if (isFilth) {
+    filthSound.play();
+  } else {
+    heartSound.play();
+  }
 }
 
 function toggleFilth() {
   isFilth = !isFilth;
   updateVisuals();
+  initParticles();
   i = 0;
   nextMsg();
 }
@@ -111,6 +135,20 @@ function updateVisuals() {
     pElement.innerHTML = "This beats because of us.<br>Waiting for 2027.";
     msgElement.innerText = "Tap the heart ❤️";
   }
+}
+
+function initParticles() {
+  particlesJS('particles-js', {
+    particles: {
+      number: { value: 50 },
+      color: { value: isFilth ? '#cc0000' : '#ff4d6d' },
+      shape: { type: isFilth ? 'circle' : 'heart' }, // 'heart' shape might need custom image, using star as placeholder
+      opacity: { value: 0.5 },
+      size: { value: 5 },
+      move: { enable: true, speed: 3 }
+    },
+    interactivity: { events: { onhover: { enable: false } } }
+  });
 }
 
 // Mouse events
@@ -148,6 +186,44 @@ heart.addEventListener('touchend', () => {
     nextMsg();
   }
 });
+
+// Customizable messages on double-click
+heart.addEventListener('dblclick', () => {
+  const newMsg = prompt('Add a new message:');
+  if (newMsg) {
+    const msgs = isFilth ? filthMessages : romanticMessages;
+    msgs.push(newMsg);
+  }
+});
+
+// Countdown Timer
+const targetDate = new Date('2027-01-01T00:00:00');
+const countdownElement = document.createElement('div');
+countdownElement.id = 'countdown';
+countdownElement.style.marginTop = '20px';
+countdownElement.style.fontSize = '16px';
+countdownElement.style.opacity = '0.85';
+countdownElement.style.zIndex = '2';
+document.body.appendChild(countdownElement);
+
+function updateCountdown() {
+  const now = new Date();
+  const diff = targetDate - now;
+  if (diff > 0) {
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    countdownElement.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s until us.`;
+  } else {
+    countdownElement.innerText = "The wait is over! 🎉";
+  }
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// Initialize particles on load
+initParticles();
 </script>
 </body>
 </html>
