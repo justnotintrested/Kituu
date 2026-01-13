@@ -79,6 +79,9 @@ p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
   <button onclick="addMessage()">Add</button>
 </div>
 <script>
+// JSONBlob ID for shared storage
+const blobUrl = 'https://jsonblob.com/api/jsonBlob/019bb8e7-3e76-70f1-93a3-1903837bb696';
+
 let romanticMessages = [
   "Still choosing you. ❤️",
   "Distance didn’t stop this. 🌍",
@@ -95,15 +98,21 @@ let filthMessages = [
   "Let's get filthy and soaked <span>💦</span>."
 ];
 
-// Load persisted messages from localStorage
-try {
-  const storedRomantic = JSON.parse(localStorage.getItem('romanticMessages') || '[]');
-  const storedFilth = JSON.parse(localStorage.getItem('filthMessages') || '[]');
-  romanticMessages = romanticMessages.concat(storedRomantic);
-  filthMessages = filthMessages.concat(storedFilth);
-} catch (e) {
-  console.error("Could not load messages from localStorage", e);
+let storedRomantic = [];
+let storedFilth = [];
+
+// Load messages from JSONBlob (Cloud)
+function loadMessages() {
+  fetch(blobUrl)
+    .then(res => res.json())
+    .then(data => {
+      if (data.romantic) storedRomantic = data.romantic;
+      if (data.filth) storedFilth = data.filth;
+      console.log('Messages loaded from cloud.');
+    })
+    .catch(err => console.error("Could not load messages from cloud", err));
 }
+loadMessages();
 
 let i = 0;
 let isFilth = false;
@@ -130,7 +139,11 @@ if (urlParams.get('mode') === 'filth') {
 }
 
 function nextMsg() {
-  const msgs = isFilth ? filthMessages : romanticMessages;
+  // Combine defaults with stored messages
+  const allRomantic = romanticMessages.concat(storedRomantic);
+  const allFilth = filthMessages.concat(storedFilth);
+
+  const msgs = isFilth ? allFilth : allRomantic;
   msgElement.innerHTML = msgs[i++ % msgs.length]; // Use innerHTML for spans
   if (isFilth) {
     filthSound.play().catch(e => console.log('Audio play failed', e));
@@ -182,28 +195,42 @@ function initParticles() {
   });
 }
 
-// Add new message
+// Add new message to Cloud
 function addMessage() {
   const newMsg = document.getElementById('newMsgInput').value.trim();
   if (newMsg) {
-    const key = isFilth ? 'filthMessages' : 'romanticMessages';
-    const msgs = isFilth ? filthMessages : romanticMessages;
-
-    // Add to current list
-    msgs.push(newMsg);
-
-    // Save to localStorage
-    try {
-      const stored = JSON.parse(localStorage.getItem(key) || '[]');
-      stored.push(newMsg);
-      localStorage.setItem(key, JSON.stringify(stored));
-      console.log('Message saved to localStorage');
-    } catch (e) {
-      console.error('Failed to save to localStorage', e);
+    // Determine which list to update
+    if (isFilth) {
+      storedFilth.push(newMsg);
+    } else {
+      storedRomantic.push(newMsg);
     }
 
+    // Save to Cloud
+    fetch(blobUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        romantic: storedRomantic,
+        filth: storedFilth
+      })
+    }).then(res => {
+      if(res.ok) {
+        console.log('Message saved to cloud');
+        alert("Message shared with her! ❤️");
+      } else {
+        console.error('Failed to save to cloud');
+        alert("Oops, couldn't save. Try again?");
+      }
+    }).catch(e => {
+      console.error('Failed to save to cloud', e);
+      alert("Network error.");
+    });
+
     document.getElementById('newMsgInput').value = '';
-    alert("Message added!");
   }
 }
 
