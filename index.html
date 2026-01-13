@@ -70,7 +70,7 @@ p{ margin-top:30px; opacity:.85; text-align:center; z-index:2;}
 <div id="particles-js"></div>
 <div class="bg"></div>
 <div class="heart"></div>
-<p>This beats because of us.<br>Waiting for 2027.</p>
+<p>This beats because of us.<br>Waiting for our 6 Month Anniversary.</p>
 <div class="msg" id="msg">Tap the heart ❤️</div>
 <audio id="heartSound" src="https://example.com/heartbeat.mp3"></audio>
 <audio id="filthSound" src="https://example.com/fast-heartbeat.mp3"></audio>
@@ -95,16 +95,20 @@ let filthMessages = [
   "Let's get filthy and soaked <span>💦</span>."
 ];
 
+// Load persisted messages from localStorage
+try {
+  const storedRomantic = JSON.parse(localStorage.getItem('romanticMessages') || '[]');
+  const storedFilth = JSON.parse(localStorage.getItem('filthMessages') || '[]');
+  romanticMessages = romanticMessages.concat(storedRomantic);
+  filthMessages = filthMessages.concat(storedFilth);
+} catch (e) {
+  console.error("Could not load messages from localStorage", e);
+}
+
 let i = 0;
 let isFilth = false;
 let pressTimer;
 let isLongPress = false;
-
-const owner = 'justnotintrested';
-const repo = 'Kituu';
-const token = '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'; 
-const romanticPath = 'romantic.txt';
-const filthPath = 'filth.txt';
 
 const heart = document.querySelector('.heart');
 const pElement = document.querySelector('p');
@@ -129,9 +133,9 @@ function nextMsg() {
   const msgs = isFilth ? filthMessages : romanticMessages;
   msgElement.innerHTML = msgs[i++ % msgs.length]; // Use innerHTML for spans
   if (isFilth) {
-    filthSound.play();
+    filthSound.play().catch(e => console.log('Audio play failed', e));
   } else {
-    heartSound.play();
+    heartSound.play().catch(e => console.log('Audio play failed', e));
   }
 }
 
@@ -146,11 +150,11 @@ function toggleFilth() {
 function updateVisuals() {
   if (isFilth) {
     heart.classList.add('filth');
-    pElement.innerHTML = "This throbs for us.<br>Craving wet 2027.";
+    pElement.innerHTML = "This throbs for us.<br>Craving our 6 Month Anniversary.";
     msgElement.innerText = "Press for heat 🔥";
   } else {
     heart.classList.remove('filth');
-    pElement.innerHTML = "This beats because of us.<br>Waiting for 2027.";
+    pElement.innerHTML = "This beats because of us.<br>Waiting for our 6 Month Anniversary.";
     msgElement.innerText = "Tap the heart ❤️";
   }
 }
@@ -178,77 +182,29 @@ function initParticles() {
   });
 }
 
-// Load messages from GitHub on start
-function loadMessages(isFilthMode) {
-  const path = isFilthMode ? filthPath : romanticPath;
-  fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`)
-    .then(res => {
-      if (res.ok) return res.text();
-      throw new Error('Not found');
-    })
-    .then(text => {
-      const msgs = text.split('\n').filter(m => m.trim());
-      if (isFilthMode) filthMessages = msgs;
-      else romanticMessages = msgs;
-    })
-    .catch(() => console.log(`No ${path} file, using defaults`));
-}
-loadMessages(false);
-loadMessages(true);
-
 // Add new message
 function addMessage() {
   const newMsg = document.getElementById('newMsgInput').value.trim();
   if (newMsg) {
+    const key = isFilth ? 'filthMessages' : 'romanticMessages';
     const msgs = isFilth ? filthMessages : romanticMessages;
+
+    // Add to current list
     msgs.push(newMsg);
-    document.getElementById('newMsgInput').value = '';
-    updateGitHubFile();
-  }
-}
 
-async function getFileSHA(path) {
-  try {
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.sha;
+    // Save to localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      stored.push(newMsg);
+      localStorage.setItem(key, JSON.stringify(stored));
+      console.log('Message saved to localStorage');
+    } catch (e) {
+      console.error('Failed to save to localStorage', e);
     }
-    return null;
-  } catch (e) {
-    return null;
+
+    document.getElementById('newMsgInput').value = '';
+    alert("Message added!");
   }
-}
-
-async function updateGitHubFile() {
-  const path = isFilth ? filthPath : romanticPath;
-  const msgs = isFilth ? filthMessages : romanticMessages;
-  const content = btoa(msgs.join('\n') + '\n'); // Add trailing newline
-  const sha = await getFileSHA(path);
-
-  const body = {
-    message: 'Add new message',
-    content: content
-  };
-  if (sha) body.sha = sha;
-
-  fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  }).then(res => {
-    if (res.ok) console.log('File updated/created on GitHub');
-    else console.error('Error updating file');
-  }).catch(err => console.error(err));
 }
 
 // Mouse events
@@ -288,7 +244,8 @@ heart.addEventListener('touchend', () => {
 });
 
 // Countdown Timer
-const targetDate = new Date('2027-01-01T00:00:00');
+// 6 Month Anniversary from Dec 6, 2025 is June 6, 2026
+const targetDate = new Date('2026-06-06T00:00:00');
 const countdownElement = document.createElement('div');
 countdownElement.id = 'countdown';
 countdownElement.style.marginTop = '20px';
@@ -305,9 +262,9 @@ function updateCountdown() {
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    countdownElement.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s until us.`;
+    countdownElement.innerText = `${days}d ${hours}h ${minutes}m ${seconds}s until our 6 month anniversary.`;
   } else {
-    countdownElement.innerText = "The wait is over! 🎉";
+    countdownElement.innerText = "Happy 6 Month Anniversary! 🎉";
   }
 }
 setInterval(updateCountdown, 1000);
